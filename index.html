@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>勇者斗恶龙 - 文字冒险</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:'Georgia','Noto Serif SC','SimSun',serif;padding:20px}
+#game{width:100%;max-width:680px;background:linear-gradient(180deg,#f5f0e8 0%,#e8e0d0 100%);border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.5),0 0 0 2px #c8b896;overflow:hidden}
+#header{background:linear-gradient(135deg,#1a3a5c 0%,#2a5a8c 100%);padding:14px 20px;color:#f0d890;text-align:center;border-bottom:3px solid #c8a050;text-shadow:1px 1px 2px rgba(0,0,0,0.5)}
+#header h1{font-size:21px;letter-spacing:4px;font-weight:700}
+#header h1 span{color:#ff6b35}
+#header .sub{font-size:12px;color:#8ab8d8;letter-spacing:2px;margin-top:2px}
+#stats{background:#222236;padding:8px 16px;display:flex;flex-wrap:wrap;gap:6px 16px;color:#e0d8c8;font-size:13px;border-bottom:2px solid #c8a050;font-family:'Consolas','Courier New',monospace}
+#stats .stat{display:flex;align-items:center;gap:3px}
+#stats .stat .label{color:#7a7a8a}
+#stats .stat .value{color:#f0d890;font-weight:bold}
+#stats .stat .value.danger{color:#e74c3c}
+#stats .stat .value.good{color:#2ecc71}
+.hp-bar-bg{display:inline-block;width:72px;height:11px;background:#3a2a2a;border:1px solid #5a4a3a;border-radius:5px;overflow:hidden;vertical-align:middle}
+.hp-bar-fill{height:100%;background:linear-gradient(90deg,#e74c3c,#2ecc71);transition:width 0.3s;border-radius:5px}
+.status-indicators{display:inline-flex;gap:3px;margin-left:4px}
+.status-indicators .badge{font-size:10px;padding:0 4px;border-radius:3px;font-weight:bold;line-height:16px}
+.badge.poison{background:#6a2a2a;color:#ff6b6b;border:1px solid #ff6b6b}
+.badge.curse{background:#2a1a4a;color:#b080e0;border:1px solid #b080e0}
+.badge.bless{background:#1a3a2a;color:#60d090;border:1px solid #60d090}
+#story{padding:20px 22px 12px;min-height:220px;max-height:340px;overflow-y:auto;line-height:1.7;font-size:15px;color:#3a3028;scroll-behavior:smooth}
+#story::-webkit-scrollbar{width:6px}
+#story::-webkit-scrollbar-track{background:#e8e0d0}
+#story::-webkit-scrollbar-thumb{background:#c8b896;border-radius:3px}
+#story .log-entry{margin-bottom:5px}
+#story .log-entry:last-child{margin-bottom:0}
+#story .log-entry.narrator{color:#3a3028}
+#story .log-entry.dialog{color:#2a5a8c;font-style:italic}
+#story .log-entry.combat{color:#c0392b;font-weight:bold}
+#story .log-entry.combat-heal{color:#27ae60;font-weight:bold}
+#story .log-entry.info{color:#7f8c8d;font-size:13px}
+#story .log-entry.title{color:#1a3a5c;font-weight:bold;font-size:16px;text-align:center}
+#story .log-entry.gold{color:#d4a017}
+#story .log-entry.system{color:#8e44ad;font-style:italic}
+#story .log-entry.dragon{color:#c0392b;font-weight:bold;font-size:15px}
+#actions{padding:8px 18px 16px;display:flex;flex-wrap:wrap;gap:7px}
+#actions button{font-family:'Georgia','Noto Serif SC',serif;font-size:13px;padding:8px 16px;border:2px solid #b8a88a;border-radius:8px;background:linear-gradient(180deg,#f8f4ec 0%,#e8e0d0 100%);color:#3a3028;cursor:pointer;transition:all 0.15s;flex:0 1 auto;min-width:72px}
+#actions button:hover{background:linear-gradient(180deg,#e8dcc8 0%,#d8ccb8 100%);border-color:#8a7a6a;transform:translateY(-1px)}
+#actions button:active{transform:translateY(0)}
+#actions button.primary{background:linear-gradient(180deg,#2a5a8c 0%,#1a3a5c 100%);color:#f0d890;border-color:#1a3a5c}
+#actions button.primary:hover{background:linear-gradient(180deg,#3a6a9c 0%,#2a4a6c 100%)}
+#actions button.danger{background:linear-gradient(180deg,#8c2a2a 0%,#5c1a1a 100%);color:#f0d0c0;border-color:#5c1a1a}
+#actions button.danger:hover{background:linear-gradient(180deg,#a63a3a 0%,#6c2a2a 100%)}
+#actions button.gold{background:linear-gradient(180deg,#c8a050 0%,#a88030 100%);color:#2a1a0a;border-color:#a88030}
+#actions button.gold:hover{background:linear-gradient(180deg,#d8b060 0%,#b89040 100%)}
+#actions button.heal{background:linear-gradient(180deg,#50a870 0%,#308850 100%);color:#f0fff0;border-color:#308850}
+#actions button.heal:hover{background:linear-gradient(180deg,#60b880 0%,#409860 100%)}
+#actions button.purple{background:linear-gradient(180deg,#6a4a9c 0%,#4a2a7c 100%);color:#e0d0f0;border-color:#4a2a7c}
+#actions button.purple:hover{background:linear-gradient(180deg,#7a5aac 0%,#5a3a8c 100%)}
+#actions button:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+.enemy-hp{margin:6px 0}
+.enemy-hp .hp-label{font-weight:bold;color:#c0392b}
+.cheat-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);z-index:999;display:flex;justify-content:center;align-items:center}
+.cheat-panel{background:#2a2a3e;border:2px solid #c8a050;border-radius:12px;padding:22px 24px;color:#e0d8c8;font-family:Consolas,monospace;max-width:340px;width:92%;box-shadow:0 8px 40px rgba(0,0,0,0.6)}
+.cheat-panel h2{color:#f0d890;text-align:center;margin-bottom:14px;font-size:16px;font-family:Georgia,serif}
+.cheat-grid{display:grid;gap:8px}
+.cheat-grid label{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.cheat-grid label span{color:#8a8a9a}
+.cheat-grid input{width:100px;padding:4px 8px;background:#1a1a2e;border:1px solid #5a4a3a;border-radius:4px;color:#f0d890;text-align:right;font-family:Consolas,monospace}
+.cheat-btns{display:flex;gap:8px;margin-top:14px;justify-content:center}
+.cheat-btn{padding:7px 22px;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:13px;border:1px solid;transition:all 0.15s}
+.cheat-btn.primary{background:linear-gradient(180deg,#2a5a8c,#1a3a5c);color:#f0d890;border-color:#1a3a5c}
+.cheat-btn.primary:hover{background:linear-gradient(180deg,#3a6a9c,#2a4a6c)}
+.cheat-btn.cancel{background:linear-gradient(180deg,#5c2a2a,#3a1a1a);color:#f0d0c0;border-color:#3a1a1a}
+.cheat-btn.cancel:hover{background:linear-gradient(180deg,#6c3a3a,#4a2a2a)}
+@media(max-width:500px){
+body{padding:6px}
+#game{border-radius:10px}
+#header{padding:12px 14px}
+#header h1{font-size:17px;letter-spacing:2px}
+#stats{font-size:11px;padding:6px 10px;gap:5px 10px}
+#story{padding:14px 14px 10px;min-height:180px;max-height:260px;font-size:14px}
+#actions{padding:6px 12px 12px}
+#actions button{font-size:12px;padding:7px 12px;min-width:60px}
+.hp-bar-bg{width:55px}
+}</style>
+</head>
+<body>
+<div id="game">
+<div id="header"><h1><span>⚔</span> 勇者斗恶龙 <span>🐉</span></h1><div class="sub">─ DRAGON QUEST · 文字冒险 ─</div></div>
+<div id="stats">
+<div class="stat"><span class="label">Lv.</span><span class="value" id="s-level">1</span></div>
+<div class="stat"><span class="label">HP</span><span class="value" id="s-hp">30</span><span class="label">/</span><span class="value" id="s-maxhp">30</span>
+<span class="hp-bar-bg"><span class="hp-bar-fill" id="s-hpbar" style="width:100%"></span></span>
+<span class="status-indicators" id="s-status"></span></div>
+<div class="stat"><span class="label">攻</span><span class="value" id="s-atk">5</span></div>
+<div class="stat"><span class="label">防</span><span class="value" id="s-def">2</span></div>
+<div class="stat"><span class="label">G</span><span class="value gold" id="s-gold">0</span></div>
+<div class="stat"><span class="label">武</span><span class="value" id="s-weapon" style="font-size:12px">木剑</span></div>
+<div class="stat"><span class="label">防具</span><span class="value" id="s-armor" style="font-size:12px">布衣</span></div>
+<div class="stat"><span class="label">饰</span><span class="value" id="s-accessory" style="font-size:12px;color:#b080e0">-</span></div>
+</div>
+<div id="story"></div>
+<div id="actions"></div>
+</div>
+<script>
+// ==================== DATA ====================
+const WEAPONS = {
+  wooden_sword: { name: '木剑', atk: 0 },
+  copper_sword: { name: '铜剑', atk: 3, price: 50 },
+  steel_sword: { name: '钢剑', atk: 6 },
+  iron_sword: { name: '铁剑', atk: 5 },
+  flame_sword: { name: '火焰剑', atk: 8 },
+  dragon_killer: { name: '屠龙剑', atk: 10 },
+};
+const ARMORS = {
+  cloth: { name: '布衣', def: 0 },
+  iron_armor: { name: '铁甲', def: 4, price: 100 },
+  platinum_armor: { name: '白金甲', def: 6 },
+  dragon_armor: { name: '龙鳞甲', def: 8 },
+};
+const ACCESSORIES = {
+  power_ring: { name: '力量戒指', atk: 2, def: 0, hp: 0 },
+  guard_ring: { name: '守护戒指', atk: 0, def: 2, hp: 0 },
+  life_ring: { name: '生命戒指', atk: 0, def: 0, hp: 15 },
+};
+const SHOP_ITEMS = {
+  herb: { name: '药草', desc: '恢复15HP+解毒', price: 10 },
+  super_herb: { name: '上等药草', desc: '恢复30HP+解毒', price: 25 },
+  antidote: { name: '解毒草', desc: '解除中毒', price: 8 },
+  torch: { name: '火把', desc: '照亮洞穴', price: 20 },
+  holy_water: { name: '圣水', desc: '战斗中用，攻击翻倍', price: 30 },
+  bomb: { name: '爆裂药', desc: '造成20固定伤害', price: 35 },
+  prayer_candle: { name: '祈祷蜡烛', desc: '必定逃脱', price: 50 },
+};
+const ENEMIES = {
+  slime: { name: '史莱姆', hp: 8, atk: 3, def: 1, exp: 3, gold: 3, desc: '一坨蓝色的果冻状生物，一跳一跳地靠近。' },
+  mushroom: { name: '蘑菇怪', hp: 12, atk: 4, def: 2, exp: 5, gold: 5, desc: '一只有着诡异笑脸的巨大蘑菇。' },
+  goblin: { name: '哥布林', hp: 18, atk: 7, def: 3, exp: 8, gold: 12, desc: '手持短刀的绿色小恶魔，眼神凶恶。' },
+  bat: { name: '大蝙蝠', hp: 10, atk: 8, def: 2, exp: 7, gold: 8, desc: '脸盆大小的蝙蝠，发出刺耳叫声。' },
+  forest_wolf: { name: '森林狼', hp: 22, atk: 10, def: 3, exp: 11, gold: 12, desc: '灰毛的森林狼，绿眼中闪着凶光。' },
+  giant_bear: { name: '巨熊', hp: 32, atk: 12, def: 5, exp: 16, gold: 20, desc: '庞大的棕熊直立而起，发出震耳欲聋的咆哮。' },
+  skeleton: { name: '骷髅兵', hp: 22, atk: 9, def: 4, exp: 12, gold: 18, desc: '从地面爬出的亡灵战士，空洞的眼眶中闪着红光。' },
+  water_snake: { name: '水蛇', hp: 16, atk: 11, def: 3, exp: 11, gold: 12, desc: '从水中窜出的巨蛇，毒牙闪着寒光。', poisonChance: 0.3 },
+  ghost: { name: '幽灵', hp: 16, atk: 10, def: 3, exp: 14, gold: 15, desc: '半透明的灵体，散发出刺骨的寒气。' },
+  wraith: { name: '怨灵', hp: 22, atk: 13, def: 4, exp: 18, gold: 22, desc: '被怨恨束缚的亡灵，发出低沉的哀嚎。', curseChance: 0.25 },
+  dark_knight: { name: '黑暗骑士', hp: 30, atk: 14, def: 6, exp: 22, gold: 28, desc: '身穿黑色铠甲的亡灵骑士，沉默地举起长剑。' },
+  rock_golem: { name: '石巨人', hp: 38, atk: 11, def: 9, exp: 20, gold: 30, desc: '由山岩构成的巨人，动作缓慢但防御极高。' },
+  wyvern: { name: '双足飞龙', hp: 32, atk: 15, def: 5, exp: 26, gold: 36, desc: '长有双翼的龙兽，发出尖锐的嘶鸣。' },
+  bandit_chief: { name: '山贼头目', hp: 35, atk: 12, def: 5, exp: 30, gold: 60, desc: '山贼的头领，手持大刀，满脸横肉。', boss: true },
+  death_knight: { name: '亡灵骑士', hp: 45, atk: 16, def: 7, exp: 45, gold: 100, desc: '古代骑士的亡灵，手持巨剑，周身缠绕着黑气。', boss: true },
+  wyvern_king: { name: '飞龙王', hp: 40, atk: 18, def: 5, exp: 55, gold: 120, desc: '飞龙的首领，体型远超同类，双翼展开遮天蔽日。', boss: true, wingGust: true },
+  ancient_dragon: { name: '远古恶龙', hp: 75, atk: 24, def: 8, exp: 500, gold: 500, desc: '沉睡千年的远古恶龙，鳞片如铸铁，双目如熔岩。它缓缓站起身，整个巢穴都在震颤。', boss: true, fireBreath: true, curseChance: 0.3 },
+};
+
+// ==================== STATE ====================
+let D = { // game data
+  hp: 30, maxHp: 30, baseAtk: 5, baseDef: 2,
+  level: 1, exp: 0, gold: 0,
+  weapon: 'wooden_sword', armor: 'cloth', accessory: null,
+  inventory: [],
+  flags: {}, location: 'town_square',
+  state: 'explore',
+  combat: null, atkBoost: false,
+  poisoned: false, cursed: false, blessing: 0,
+};
+
+// ==================== HELPERS ====================
+function getBaseAtk() {
+  let a = D.baseAtk + WEAPONS[D.weapon].atk;
+  if (D.accessory) a += ACCESSORIES[D.accessory].atk;
+  if (D.cursed) a -= 2;
+  if (D.blessing > 0) a += 2;
+  return Math.max(0, a);
+}
+function getDef() {
+  let d = D.baseDef + ARMORS[D.armor].def;
+  if (D.accessory) d += ACCESSORIES[D.accessory].def;
+  if (D.cursed) d -= 1;
+  return Math.max(0, d);
+}
+function getMaxHp() { return D.maxHp + (D.accessory ? ACCESSORIES[D.accessory].hp : 0); }
+function getCurrentAtk() { return getBaseAtk() * (D.atkBoost ? 2 : 1); }
+function hasItem(id) { return D.inventory.includes(id); }
+function itemCount(id) { return D.inventory.filter(i => i === id).length; }
+function addItem(id) { D.inventory.push(id); }
+function removeItem(id) { const i = D.inventory.indexOf(id); if (i > -1) D.inventory.splice(i, 1); }
+function getInvNames() { return D.inventory.map(id => {
+  if (SHOP_ITEMS[id]) return SHOP_ITEMS[id].name;
+  if (WEAPONS[id]) return WEAPONS[id].name;
+  if (ARMORS[id]) return ARMORS[id].name;
+  if (ACCESSORIES[id]) return ACCESSORIES[id].name;
+  return id;
+}).join('、') || '空'; }
+
+function addExp(amt) {
+  D.exp += amt;
+  while (D.exp >= D.level * 15) {
+    D.exp -= D.level * 15; D.level++;
+    D.maxHp += 6; D.hp = Math.min(D.hp + 6, D.maxHp);
+    D.baseAtk += 1; D.baseDef += 1;
+    addLog(`🎉 升级！Lv.${D.level}！ HP上限+6 攻+1 防+1`, 'system');
+  }
+}
+
+// ==================== COMBAT ====================
+let combatId = 0;
+
+function startCombat(enemyId) {
+  D.state = 'combat'; const e = ENEMIES[enemyId];
+  D.combat = {
+    id: ++combatId, key: enemyId,
+    hp: e.hp, maxHp: e.hp, atk: e.atk, def: e.def,
+    exp: e.exp, gold: e.gold, name: e.name, desc: e.desc,
+    turn: 0, playerDefending: false,
+    boss: e.boss || false, poisonChance: e.poisonChance || 0,
+    curseChance: e.curseChance || 0, fireBreath: e.fireBreath || false,
+    wingGust: e.wingGust || false,
+  };
+  addLog(`\n⚔ 战斗开始！`, 'combat');
+  addLog(e.desc, 'narrator');
+  renderCombat();
+}
+
+function damagePlayer(amount) {
+  const def = D.combat.playerDefending;
+  if (def) { amount = Math.floor(amount / 2); D.combat.playerDefending = false; }
+  const dmg = Math.max(1, amount);
+  D.hp = Math.max(0, D.hp - dmg);
+  addLog(`→ ${D.combat.name}造成了 ${dmg} 伤害${def ? '（防御减半）' : ''}`, 'combat');
+  if (D.hp <= 0) { gameOver(); return true; }
+  return false;
+}
+
+function damageEnemy(amount) {
+  const dmg = Math.max(1, amount - Math.floor(D.combat.def / 2));
+  D.combat.hp = Math.max(0, D.combat.hp - dmg);
+  addLog(`→ 对${D.combat.name}造成 ${dmg} 伤害`, 'combat');
+  if (D.combat.hp <= 0) { victoryCombat(); return true; }
+  return false;
+}
+
+function enemyTurn() {
+  const e = D.combat; const def = getDef();
+  if (e.fireBreath && e.turn > 1 && e.turn % 3 === 0) {
+    const dmg = Math.floor(e.atk * 1.5 - Math.floor(def / 2));
+    addLog('→ 🔥 远古恶龙喷出烈焰！', 'dragon');
+    damagePlayer(Math.max(1, dmg));
+    if (!D.cursed && Math.random() < e.curseChance) {
+      D.cursed = true; addLog('→ 被龙之诅咒缠身！攻防下降！', 'combat');
+    }
+    return;
+  }
+  if (e.wingGust && Math.random() < 0.3) {
+    const dmg = Math.floor(e.atk * 1.3 - Math.floor(def / 2));
+    addLog(`→ ${e.name}扇起狂风！`, 'combat');
+    damagePlayer(Math.max(1, dmg));
+    return;
+  }
+  const eAtk = e.atk + Math.floor(Math.random() * 3) - 1;
+  const dmg = Math.max(1, eAtk - Math.floor(def / 2) + Math.floor(Math.random() * 3));
+  damagePlayer(dmg);
+  if (e.poisonChance && Math.random() < e.poisonChance && !D.poisoned) {
+    D.poisoned = true; addLog('→ 中毒了！', 'combat');
+  }
+  if (e.curseChance && Math.random() < e.curseChance && !D.cursed && !e.fireBreath) {
+    D.cursed = true; addLog('→ 被诅咒了！攻防下降！', 'combat');
+  }
+}
+
+function combatAction(action) {
+  if (D.state !== 'combat' || !D.combat || D.hp <= 0) return;
+  D.combat.turn++; const e = D.combat; const lv = Math.floor(D.level / 2);
+  switch (action) {
+    case 'attack': damageEnemy(getCurrentAtk() + lv + Math.floor(Math.random() * 4)); break;
+    case 'defend': D.combat.playerDefending = true; addLog('→ 摆出防御姿态', 'narrator'); break;
+    case 'item_herb':
+      if (!hasItem('herb')) { addLog('没有药草', 'info'); break; }
+      removeItem('herb');
+      D.hp = Math.min(D.hp + 15, getMaxHp());
+      if (D.poisoned) { D.poisoned = false; addLog('→ 药草恢复了15HP，毒素清除', 'combat-heal'); }
+      else addLog('→ 药草恢复了15HP', 'combat-heal');
+      break;
+    case 'item_super_herb':
+      if (!hasItem('super_herb')) { addLog('没有上等药草', 'info'); break; }
+      removeItem('super_herb');
+      D.hp = Math.min(D.hp + 30, getMaxHp());
+      if (D.poisoned) { D.poisoned = false; addLog('→ 上等药草恢复了30HP，毒素清除', 'combat-heal'); }
+      else addLog('→ 上等药草恢复了30HP', 'combat-heal');
+      break;
+    case 'item_antidote':
+      if (!hasItem('antidote')) { addLog('没有解毒草', 'info'); break; }
+      removeItem('antidote');
+      if (D.poisoned) { D.poisoned = false; addLog('→ 毒素清除', 'combat-heal'); }
+      else addLog('→ 没有中毒', 'info');
+      break;
+    case 'item_holy_water':
+      if (!hasItem('holy_water')) { addLog('没有圣水', 'info'); break; }
+      removeItem('holy_water'); D.atkBoost = true;
+      addLog('→ 洒下圣水！攻击力翻倍！', 'system');
+      damageEnemy(getCurrentAtk() + lv + Math.floor(Math.random() * 4));
+      D.atkBoost = false; break;
+    case 'item_bomb':
+      if (!hasItem('bomb')) { addLog('没有爆裂药', 'info'); break; }
+      removeItem('bomb'); D.combat.hp = Math.max(0, D.combat.hp - 20);
+      addLog('→ 爆裂药造成20点固定伤害！', 'combat');
+      if (D.combat.hp <= 0) { victoryCombat(); return; } break;
+    case 'item_prayer_candle':
+      if (!hasItem('prayer_candle')) { addLog('没有祈祷蜡烛', 'info'); break; }
+      removeItem('prayer_candle'); addLog('→ 点燃蜡烛，成功逃脱！', 'system');
+      endCombatCleanup(); return;
+    case 'flee':
+      if (e.boss) { addLog('→ BOSS挡住了去路！无法逃跑！', 'combat'); break; }
+      if (Math.random() < 0.45) { addLog('→ 成功逃跑', 'info'); endCombatCleanup(); return; }
+      else addLog('→ 逃跑失败', 'combat'); break;
+  }
+  if (!D.combat || D.combat.hp <= 0) { if (D.combat && D.combat.hp <= 0) victoryCombat(); return; }
+  if (D.hp <= 0) return;
+  enemyTurn();
+  if (D.hp <= 0) return;
+  if (D.poisoned && D.hp > 0) {
+    D.hp = Math.max(0, D.hp - 3); addLog('→ 毒素发作！-3HP', 'combat');
+    if (D.hp <= 0) { gameOver(); return; }
+  }
+  renderCombat();
+}
+
+function endCombatCleanup() {
+  D.state = 'explore'; D.combat = null; D.atkBoost = false;
+  if (D.blessing > 0) D.blessing--;
+  renderLocation();
+}
+
+function victoryCombat() {
+  const e = D.combat; const isFinal = e.key === 'ancient_dragon';
+  D.gold += e.gold; addLog(`\n✨ 击败了${e.name}！`, 'combat-heal');
+  addLog(`获得 ${e.exp} 经验 ${e.gold} 金币`, 'gold');
+  addExp(e.exp);
+  // Post-battle events
+    if (e.key === 'bandit_chief' && !D.flags.killed_bandit_chief) {
+      D.flags.killed_bandit_chief = true;
+      if (!hasItem('iron_sword') && D.weapon !== 'iron_sword') {
+        addItem('iron_sword'); addLog('💡 缴获了山贼头目的【铁剑】！攻击力+5', 'system');
+      }
+    }
+    if (e.key === 'death_knight' && !D.flags.killed_death_knight) {
+      D.flags.killed_death_knight = true;
+      if (!hasItem('platinum_armor')) {
+        addItem('platinum_armor'); addLog('💡 亡灵骑士消散后留下了【白金甲】！防御力+6', 'system');
+      }
+    }
+    if (e.key === 'wyvern_king' && !D.flags.killed_wyvern_king) {
+      D.flags.killed_wyvern_king = true;
+      if (!hasItem('dragon_killer')) {
+        addItem('dragon_killer'); addLog('💡 飞龙王掉落了传说中的【屠龙剑】！攻击力+10', 'system');
+      }
+    }
+    if (e.key === 'skeleton' && !D.flags.found_steel_sword && D.weapon !== 'steel_sword' && !hasItem('steel_sword')) {
+      D.flags.found_steel_sword = true;
+      addItem('steel_sword'); addLog('💡 骷髅兵身后插着一把【钢剑】！攻击力+6', 'system');
+    }
+    if (e.key === 'ghost' && !D.flags.found_dragon_armor && D.armor !== 'dragon_armor' && !hasItem('dragon_armor')) {
+      D.flags.found_dragon_armor = true;
+      addItem('dragon_armor'); addLog('💡 幽灵消失后留下了【龙鳞甲】！防御力+8', 'system');
+    }
+  if (isFinal) {
+    D.flags.defeated_dragon = true;
+    D.state = 'explore'; D.combat = null; D.atkBoost = false;
+    if (D.blessing > 0) D.blessing--;
+    addLog('\n══════════════════════', 'dragon');
+    addLog('🏆 恭喜！你击败了远古恶龙！', 'dragon');
+    addLog('══════════════════════', 'dragon');
+    addLog('\n你带着龙牙回到ラダトーム，国王亲自为你加冕。', 'narrator');
+    addLog('王国恢复了和平，你的名字被永远传颂——', 'narrator');
+    addLog('🌟 传说中的勇者 🌟', 'title');
+    document.getElementById('actions').innerHTML = `<button onclick="resetGame()" class="primary">重新开始</button>`;
+    renderStats(); return;
+  }
+  D.combat = null; D.atkBoost = false;
+  if (D.blessing > 0) D.blessing--;
+  renderLocation();
+}
+
+function gameOver() {
+  addLog('\n══════', 'combat'); addLog('💀 你倒下了...', 'combat'); addLog('══════', 'combat');
+  addLog('\n在黑暗中失去了意识...', 'narrator');
+  D.state = 'game_over'; D.combat = null;
+  document.getElementById('actions').innerHTML = `<button onclick="resetGame()" class="primary">重新开始</button>`;
+}
+
+function resetGame() {
+  D.hp=30;D.maxHp=30;D.baseAtk=5;D.baseDef=2;D.level=1;D.exp=0;D.gold=0;
+  D.weapon='wooden_sword';D.armor='cloth';D.accessory=null;
+  D.inventory=[];D.flags={};D.location='town_square';D.state='explore';
+  D.combat=null;D.atkBoost=false;D.poisoned=false;D.cursed=false;D.blessing=0;
+  document.getElementById('story').innerHTML='';
+  renderLocation();
+}
+
+// ==================== LOCATIONS ====================
+const LOC = {};
+
+LOC.town_square = {
+  name: 'ラダトーム 城镇广场',
+  desc: () => {
+    let s = '阳光洒在古老的石板路上，钟楼发出悠扬的报时声。';
+    if (D.flags.defeated_dragon) s += '\n\n和平的城镇，人们脸上洋溢着笑容。';
+    else if (!D.flags.talked_king) s += '\n\n远处城堡的旗帜在风中飘扬——国王正在招募讨伐恶龙的勇者。';
+    else s += '\n\n城堡的旗帜仍在飘扬——恶龙的威胁尚未解除。';
+    return s;
+  },
+  actions: () => {
+    if (D.flags.defeated_dragon) return [{ text: '🏰 王城', action: ()=>go('castle'), cls:'primary' }];
+    return [
+      { text: '🏰 王城', action: ()=>go('castle'), cls:'primary' },
+      { text: '🏪 道具店', action: ()=>go('shop') },
+      { text: '⚔ 武器店', action: ()=>go('weapon_shop') },
+      { text: '🏨 旅馆', action: ()=>go('inn') },
+      { text: '⛪ 教堂', action: ()=>go('church') },
+      { text: '🌲 森林入口', action: ()=>go('forest') },
+    ];
+  },
+};
+
+LOC.castle = {
+  name: '王城',
+  desc: () => {
+    if (D.flags.defeated_dragon) return '国王看到你后喜极而泣：「勇者啊！你拯救了我们的王国！从今往后你就是ラダトーム的守护者！」';
+    if (!D.flags.talked_king) return '庄严肃穆的大殿中，老国王眉头紧锁。他看到你后站起身：\n\n「年轻的勇者，你终于来了。恶龙盘踞在北方的洞穴中。我赐你50金币作为盘缠，请务必消灭恶龙！」';
+    return '国王关切地问：「勇者啊，准备好挑战恶龙了吗？先去武器店和道具店做好准备，恶龙非常强大。」';
+  },
+  actions: () => {
+    if (D.flags.defeated_dragon) return [{ text: '返回广场', action: ()=>go('town_square') }];
+    if (!D.flags.talked_king) return [
+      { text: '接受委托', action: ()=>{
+        D.flags.talked_king=true; D.gold+=50;
+        addLog('获得50金币', 'gold');
+        if (!hasItem('herb')){addItem('herb');addLog('还得到一颗药草','info');}
+        renderLocation();
+      }, cls:'primary' },
+      { text: '返回广场', action: ()=>go('town_square') },
+    ];
+    return [{ text: '返回广场', action: ()=>go('town_square') }];
+  },
+};
+
+LOC.shop = {
+  name: '道具店',
+  desc: () => `热情的店主招呼你：「欢迎光临！」\n💰 ${D.gold} G\n📦 ${getInvNames()}`,
+  actions: () => {
+    const acts = [];
+    const addBuy = (id) => {
+      const item = SHOP_ITEMS[id];
+      acts.push({ text: `${item.name}(${item.price}G)`, action: ()=>{if(D.gold<item.price){addLog('金币不够','info');renderLocation();return;}D.gold-=item.price;addItem(id);addLog(`购买了${item.name}`,'gold');renderLocation();}, cls:'gold' });
+    };
+    addBuy('herb'); addBuy('super_herb'); addBuy('antidote');
+    if (!hasItem('torch') && !D.flags.used_torch) addBuy('torch');
+    addBuy('holy_water'); addBuy('bomb'); addBuy('prayer_candle');
+    acts.push({ text: '离开', action: ()=>go('town_square') });
+    return acts;
+  },
+};
+
+LOC.weapon_shop = {
+  name: '武器店',
+  desc: () => `健壮的铁匠大叔擦拭着武器：「想活命就得有好装备！」\n💰 ${D.gold} G\n当前：${WEAPONS[D.weapon].name}(攻+${WEAPONS[D.weapon].atk}) / ${ARMORS[D.armor].name}(防+${ARMORS[D.armor].def})${D.accessory?' / '+ACCESSORIES[D.accessory].name:''}`,
+  actions: () => {
+    const acts = [];
+    if (D.weapon==='wooden_sword' && D.gold>=50 && !D.flags.bought_sword)
+      acts.push({ text: '⚔ 铜剑(50G)', action: ()=>{D.gold-=50;D.flags.bought_sword=true;D.weapon='copper_sword';addLog('装备了铜剑！攻击力+3','system');renderLocation();}, cls:'gold' });
+    if (D.armor==='cloth' && D.gold>=100 && !D.flags.bought_armor)
+      acts.push({ text: '🛡 铁甲(100G)', action: ()=>{D.gold-=100;D.flags.bought_armor=true;D.armor='iron_armor';addLog('装备了铁甲！防御力+4','system');renderLocation();}, cls:'gold' });
+    acts.push({ text: '离开', action: ()=>go('town_square') });
+    return acts;
+  },
+};
+
+LOC.inn = {
+  name: '🏨 旅馆',
+  desc: () => {
+    let s = '温暖的旅馆大堂中，老板娘笑着说：「欢迎光临！」\n\n';
+    s += `住宿费：10G（完全恢复HP）\n`;
+    s += `当前HP：${D.hp}/${getMaxHp()}\n当前金币：${D.gold}G`;
+    if (D.level > 1) s += '\n\n旅馆里也提供存档服务——老板娘会帮你记录冒险历程。';
+    return s;
+  },
+  actions: () => [
+    { text: '🛌 住宿(10G)', action: ()=>{
+      if (D.gold<10){addLog('金币不够','info');renderLocation();return;}
+      D.gold-=10; D.hp=getMaxHp(); D.poisoned=false;
+      addLog('好好休息了一晚，HP完全恢复！毒素也清除了。','heal');
+      saveGame(); addLog('💾 进度已保存。','info');
+      renderLocation();
+    }, cls:'heal' },
+    { text: '💾 存档', action: ()=>{saveGame();addLog('💾 进度已保存。','info');renderLocation();}, cls:'primary' },
+    { text: '和老板娘闲聊', action: ()=>{
+      const msgs = [
+        '"听说北之森林里有强盗出没，小心些。"',
+        '"洞穴里的恶龙已经盘踞多年了，之前的勇者都没能回来..."',
+        '"教堂的神父是个好人，他会给你祝福的。"',
+        '"武器店的铁匠年轻时也是个冒险者呢。"',
+        '"如果你找到力量种子，记得自己吃掉——那东西可遇不可求。"',
+      ];
+      addLog(msgs[Math.floor(Math.random()*msgs.length)], 'dialog');
+      renderLocation();
+    }},
+    { text: '离开', action: ()=>go('town_square') },
+  ],
+};
+
+LOC.church = {
+  name: '⛪ 教堂',
+  desc: () => {
+    let s = '宁静的教堂中，彩色玻璃透下斑斓的光芒。神父温和地看着你。\n\n';
+    if (D.cursed) s += '⚠ 你身上缠绕着诅咒的黑气。神父说：「孩子，你被诅咒了。20G可以为你驱散它。」\n\n';
+    s += `💰 ${D.gold}G\n`;
+    if (D.blessing > 0) s += `✨ 祝福剩余：${D.blessing}场战斗`;
+    return s;
+  },
+  actions: () => {
+    const acts = [];
+    if (D.cursed) acts.push({ text: '🙏 解除诅咒(20G)', action: ()=>{
+      if (D.gold<20){addLog('金币不够','info');renderLocation();return;}
+      D.gold-=20; D.cursed=false; addLog('神父为你驱散了诅咒！','heal');renderLocation();
+    }, cls:'heal' });
+    if (D.blessing <= 0) acts.push({ text: '✨ 接受祝福(30G)', action: ()=>{
+      if (D.gold<30){addLog('金币不够','info');renderLocation();return;}
+      D.gold-=30; D.blessing=3; addLog('神父为你祈福！接下来3场战斗攻击力+2','system');renderLocation();
+    }, cls:'gold' });
+    acts.push({ text: '📖 阅读经文', action: ()=>{
+      const verses = [
+        '"光明终将驱散黑暗，勇者之心不可动摇。"',
+        '"纵使身陷深渊，也当仰望星空。"',
+        '"守护他人的信念，是最强的力量。"',
+        '"每一次跌倒，都是为了更坚定地站起。"',
+      ];
+      addLog(verses[Math.floor(Math.random()*verses.length)], 'dialog');renderLocation();
+    }});
+    acts.push({ text: '离开', action: ()=>go('town_square') });
+    return acts;
+  },
+};
+
+// ---- Forest area ----
+LOC.forest = {
+  name: '🌲 森林入口',
+  desc: () => {
+    let s = '茂密的森林散发出潮湿的泥土气息。';
+    if (D.flags.forest_herb_found !== true) s += '\n\n草丛中似乎有什么在发光...';
+    if (D.flags.forest_explored && !D.flags.used_torch) s += '\n\n一条小路通向黑暗的洞穴入口。';
+    return s;
+  },
+  actions: () => {
+    const acts = [];
+    if (D.flags.forest_herb_found !== true) acts.push({ text: '搜索草丛', action: ()=>{
+      D.flags.forest_herb_found = true;
+      if (Math.random()<0.6){addItem('herb');addLog('🌿 找到药草！','system');}
+      else addLog('什么都没有','info');
+      renderLocation();
+    }});
+    acts.push({ text: '深入探索', action: ()=>{
+      D.flags.forest_explored=true;
+      if (Math.random()<0.4) startCombat(Math.random()<0.6?'slime':'mushroom');
+      else {addLog('安全地探索了一番，没有遇到危险。','narrator');renderLocation();}
+    }});
+    acts.push({ text: '森林深处', action: ()=>go('forest_deep') });
+    acts.push({ text: '北之森林', action: ()=>go('north_forest') });
+    acts.push({ text: '洞穴入口', action: ()=>go('cave_entrance') });
+    acts.push({ text: '返回城镇', action: ()=>go('town_square') });
+    return acts;
+  },
+};
+
+LOC.forest_deep = {
+  name: '🌳 森林深处',
+  desc: () => {
+    if (!D.flags.deep_forest_visited) return '越往深处越暗，参天大树遮天蔽日。空气中弥漫着危险的气息。';
+    return '幽暗的森林深处。隐约能听到远处的咆哮。';
+  },
+  actions: () => {
+    const acts = []; D.flags.deep_forest_visited=true;
+    acts.push({ text: '探索四周', action: ()=>{
+      if (Math.random()<0.5) startCombat(Math.random()<0.5?'goblin':'bat');
+      else {if(!D.flags.found_str_seed && Math.random()<0.3){D.flags.found_str_seed=true;D.baseAtk+=2;addLog('💪 发现力量种子！攻击力永久+2！','system');}else addLog('什么也没发现。','info');renderLocation();}
+    }});
+    acts.push({ text: '山贼营地', action: ()=>go('bandit_camp') });
+    acts.push({ text: '返回森林入口', action: ()=>go('forest') });
+    return acts;
+  },
+};
+
+LOC.bandit_camp = {
+  name: '⛺ 山贼营地',
+  desc: () => {
+    if (D.flags.killed_bandit_chief) return '山贼营地已经空无一人，只剩下凌乱的帐篷和熄灭的篝火。';
+    return '一片空地被帐篷和木栅栏围了起来。几个山贼正在篝火旁喝酒赌博。\n\n一个魁梧的身影从最大的帐篷中走了出来——是山贼头目！';
+  },
+  actions: () => {
+    if (D.flags.killed_bandit_chief) return [{ text: '返回森林深处', action: ()=>go('forest_deep') }];
+    return [
+      { text: '⚔ 挑战山贼头目！', action: ()=>startCombat('bandit_chief'), cls:'danger' },
+      { text: '返回森林深处', action: ()=>go('forest_deep') },
+    ];
+  },
+};
+
+LOC.north_forest = {
+  name: '🌲 北之森林',
+  desc: () => {
+    if (!D.flags.north_forest_visited) return '往北走的森林更加阴冷。树木上挂满了苔藓，空气中弥漫着腐烂树叶的气味。你能感觉到这里栖息着更危险的生物。';
+    return '北之森林依旧阴森。远处传来野兽的嚎叫。';
+  },
+  actions: () => {
+    const acts = []; D.flags.north_forest_visited=true;
+    acts.push({ text: '探索森林', action: ()=>{
+      if (Math.random()<0.5) startCombat(Math.random()<0.5?'forest_wolf':'giant_bear');
+      else {
+        if (!D.flags.found_power_ring && Math.random()<0.3) {
+          D.flags.found_power_ring=true; addItem('power_ring');
+          addLog('💍 在树洞中发现【力量戒指】！攻击力+2','system');
+        } else addLog('什么也没发现。','info');
+        renderLocation();
+      }
+    }});
+    acts.push({ text: '废弃遗迹', action: ()=>go('ruined_ruins') });
+    acts.push({ text: '返回森林入口', action: ()=>go('forest') });
+    return acts;
+  },
+};
+
+LOC.ruined_ruins = {
+  name: '🏚 废弃遗迹',
+  desc: () => {
+    if (D.flags.killed_death_knight) return '古老的遗迹中一片寂静，只有风穿过残垣断壁的呜咽。亡灵骑士已经被击败了。';
+    return '古老的石头遗迹半掩在藤蔓中。广场中央的祭坛上缠绕着黑气，一具身穿黑色铠甲的亡灵骑士站在祭坛前，仿佛在守护着什么。';
+  },
+  actions: () => {
+    if (D.flags.killed_death_knight) return [{ text: '返回北之森林', action: ()=>go('north_forest') }];
+    return [
+      { text: '⚔ 挑战亡灵骑士！', action: ()=>startCombat('death_knight'), cls:'danger' },
+      { text: '返回北之森林', action: ()=>go('north_forest') },
+    ];
+  },
+};
+
+// ---- Cave area ----
+LOC.cave_entrance = {
+  name: '🕳 洞穴入口',
+  desc: () => {
+    if (!D.flags.used_torch && !hasItem('torch')) return '洞口漆黑一片，伸手不见五指。阴冷的湿气从洞内涌出。\n\n你需要火把才能继续前进。';
+    if (D.flags.used_torch && D.flags.cave_explored) return '熟悉的洞穴入口。火把的残骸还在原地。';
+    return '入口处散落着骸骨。你点燃火把，微弱的火光在岩壁上跳动。';
+  },
+  actions: () => {
+    const acts = [];
+    if (hasItem('torch') && !D.flags.used_torch) acts.push({ text: '🔥 点燃火把进入', action: ()=>{removeItem('torch');D.flags.used_torch=true;addLog('点燃火把，走进洞穴...','narrator');go('cave_b1');}, cls:'primary' });
+    if (D.flags.used_torch) acts.push({ text: '进入洞穴', action: ()=>go('cave_b1'), cls:'primary' });
+    acts.push({ text: '返回森林', action: ()=>go('forest') });
+    return acts;
+  },
+};
+
+LOC.cave_b1 = {
+  name: '🕳 地下湖 B1',
+  desc: () => {
+    if (!D.flags.cave_b1_visited) return '火把的光芒照亮了一个巨大的地下湖。湖水漆黑如墨，水面泛着诡异的光泽。洞顶的钟乳石滴下水珠，发出清脆的响声。';
+    return '地下湖边，水面依旧平静。你能听到洞穴深处传来的低语。';
+  },
+  actions: () => {
+    const acts = []; D.flags.cave_b1_visited=true;
+    acts.push({ text: '探索地下湖', action: ()=>{
+      if (Math.random()<0.5) startCombat(Math.random()<0.5?'skeleton':'water_snake');
+      else {
+        if (!D.flags.found_guard_ring && Math.random()<0.3) {
+          D.flags.found_guard_ring=true; addItem('guard_ring');
+          addLog('💍 在湖底发现【守护戒指】！防御力+2','system');
+        } else addLog('什么也没发现。','info');
+        renderLocation();
+      }
+    }});
+    if (D.flags.cave_b1_visited) acts.push({ text: '继续深入 B2', action: ()=>go('cave_b2') });
+    acts.push({ text: '返回洞口', action: ()=>go('cave_entrance') });
+    return acts;
+  },
+};
+
+LOC.cave_b2 = {
+  name: '🕳 古代遗迹 B2',
+  desc: () => {
+    if (!D.flags.cave_b2_visited) return '洞穴豁然开朗——这里竟然是一座地下遗迹！残破的石柱和刻满符文的墙壁诉说着远古的历史。空气中弥漫着阴冷的气息，隐约能看到半透明的影子在飘动。';
+    return '古代遗迹中，符文在黑暗中幽幽发光。灵体的低语在走廊间回荡。';
+  },
+  actions: () => {
+    const acts = []; D.flags.cave_b2_visited=true;
+    acts.push({ text: '探索遗迹', action: ()=>{
+      if (Math.random()<0.5) startCombat(Math.random()<0.5?'ghost':'wraith');
+      else {addLog('在遗迹中搜索了一番，没有发现。','info');renderLocation();}
+    }});
+    acts.push({ text: '继续深入 B3', action: ()=>go('cave_b3') });
+    acts.push({ text: '返回 B1', action: ()=>go('cave_b1') });
+    return acts;
+  },
+};
+
+LOC.cave_b3 = {
+  name: '🕳 黑暗回廊 B3',
+  desc: () => {
+    if (!D.flags.cave_b3_visited) return '穿过一道狭窄的石缝，你来到一个巨大的地下回廊。这里的空气灼热而干燥，墙壁上镶嵌着发出暗红色光芒的矿石。远处的黑暗中传来沉重的脚步声。';
+    return '黑暗回廊中，红矿石的光芒忽明忽暗。不知名的生物在暗处移动。';
+  },
+  actions: () => {
+    const acts = []; D.flags.cave_b3_visited=true;
+    acts.push({ text: '探索回廊', action: ()=>{
+      if (Math.random()<0.5) startCombat(Math.random()<0.5?'dark_knight':'rock_golem');
+      else {
+        let found=false;
+        if (!D.flags.found_flame_sword && Math.random()<0.25) {
+          D.flags.found_flame_sword=true; addItem('flame_sword');
+          addLog('🔥 在石台上发现【火焰剑】！攻击力+8','system'); found=true;
+        }
+        if (!found && !D.flags.found_life_ring && Math.random()<0.25) {
+          D.flags.found_life_ring=true; addItem('life_ring');
+          addLog('💍 在骷髅手指上发现【生命戒指】！HP上限+15','system'); found=true;
+        }
+        if (!found) addLog('什么也没发现。','info');
+        renderLocation();
+      }
+    }});
+    if (D.flags.cave_b3_visited) {
+      if (D.flags.killed_wyvern_king || D.level >= 4 || hasItem('dragon_killer'))
+        acts.push({ text: '🐉 前往龙之巅', action: ()=>go('dragon_peak'), cls:'danger' });
+      else
+        acts.push({ text: '尝试前往龙之巅', action: ()=>{addLog('前方的通道被巨大的石门挡住，需要更强的力量才能推开。（建议Lv.4+并持有屠龙剑）','info');renderLocation();} });
+    }
+    acts.push({ text: '返回 B2', action: ()=>go('cave_b2') });
+    return acts;
+  },
+};
+
+// ---- Dragon area ----
+LOC.dragon_peak = {
+  name: '⛰ 龙之巅',
+  desc: () => {
+    if (!D.flags.dragon_peak_visited) return '从洞穴中走出，你发现自己已经到了山巅。凛冽的山风扑面而来，云海在脚下翻涌。远处的山峰上有一个巨大的黑影——那是恶龙的巢穴。\n\n山巅平台上栖息着几只双足飞龙。';
+    return '龙之巅，云海翻涌。恶龙的巢穴就在前方。';
+  },
+  actions: () => {
+    const acts = []; D.flags.dragon_peak_visited=true;
+    acts.push({ text: '挑战飞龙', action: ()=>{
+      if (Math.random()<0.6) startCombat('wyvern');
+      else {addLog('飞龙们在空中盘旋，没有注意到你。','info');renderLocation();}
+    }});
+    if (D.flags.dragon_peak_visited) acts.push({ text: '飞龙王之巅', action: ()=>go('wyvern_peak') });
+    acts.push({ text: '返回 B3', action: ()=>go('cave_b3') });
+    return acts;
+  },
+};
+
+LOC.wyvern_peak = {
+  name: '⛰ 飞龙王之巅',
+  desc: () => {
+    if (D.flags.killed_wyvern_king) return '山巅之上，飞龙王的巨大尸体静静躺在岩石间。通往恶龙巢穴的道路已经打开。';
+    return '山巅的最高处，一只体型是同类三倍的巨型飞龙正站在悬崖边俯瞰云海。它察觉到你的到来，缓缓转过头来。';
+  },
+  actions: () => {
+    if (D.flags.killed_wyvern_king) return [{ text: '🐉 前往恶龙巢穴！', action: ()=>go('dragon_lair'), cls:'danger' }];
+    return [
+      { text: '⚔ 挑战飞龙王！', action: ()=>startCombat('wyvern_king'), cls:'danger' },
+      { text: '返回龙之巅', action: ()=>go('dragon_peak') },
+    ];
+  },
+};
+
+LOC.dragon_lair = {
+  name: '🐉 龙之巢穴',
+  desc: () => {
+    if (D.flags.defeated_dragon) return '巢穴中只剩下熄灭的灰烬和破碎的龙鳞。恶龙已被讨伐。';
+    return '🔥 巨大的洞穴中堆满金币和骸骨。洞穴深处，远古恶龙睁开了熔岩般的双目。它缓缓站起身，整个地面都在震颤。\n\n「吼────────！！！！」\n\n最终决战！';
+  },
+  actions: () => {
+    if (D.flags.defeated_dragon) return [{ text: '返回城镇', action: ()=>go('town_square') }];
+    return [
+      { text: '⚔ 挑战远古恶龙！', action: ()=>startCombat('ancient_dragon'), cls:'danger' },
+      { text: '返回龙之巅', action: ()=>go('dragon_peak') },
+    ];
+  },
+};
+
+// ==================== NAVIGATION ====================
+function go(id) {
+  D.location = id; renderLocation();
+}
+
+// ==================== SAVE/LOAD ====================
+function saveGame() {
+  try {
+    const data = {};
+    ['hp','maxHp','baseAtk','baseDef','level','exp','gold','weapon','armor','accessory','inventory','flags','poisoned','cursed','blessing'].forEach(k => data[k] = JSON.parse(JSON.stringify(D[k])));
+    localStorage.setItem('dq_save', JSON.stringify(data));
+  } catch(e) {}
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem('dq_save');
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    Object.assign(D, data);
+    return true;
+  } catch(e) { return false; }
+}
+
+// ==================== RENDER ====================
+const storyEl = () => document.getElementById('story');
+const actionsEl = () => document.getElementById('actions');
+
+function addLog(text, cls='narrator') {
+  const el = storyEl();
+  const div = document.createElement('div');
+  div.className='log-entry '+cls; div.textContent=text;
+  el.appendChild(div); el.scrollTop = el.scrollHeight;
+}
+
+function renderStats() {
+  const mhp = getMaxHp();
+  document.getElementById('s-level').textContent = D.level;
+  document.getElementById('s-hp').textContent = D.hp;
+  const maxEl = document.getElementById('s-maxhp'); maxEl.textContent = mhp;
+  maxEl.className = 'value' + (mhp > D.maxHp ? ' good' : '');
+  document.getElementById('s-atk').textContent = getBaseAtk();
+  document.getElementById('s-def').textContent = getDef();
+  document.getElementById('s-gold').textContent = D.gold;
+  document.getElementById('s-weapon').textContent = WEAPONS[D.weapon].name;
+  document.getElementById('s-armor').textContent = ARMORS[D.armor].name;
+  document.getElementById('s-accessory').textContent = D.accessory ? ACCESSORIES[D.accessory].name : '-';
+  const hpEl = document.getElementById('s-hp');
+  hpEl.className = 'value' + (D.hp <= mhp*0.25 ? ' danger' : D.hp > mhp*0.6 ? ' good' : '');
+  const pct = Math.max(0, (D.hp / mhp) * 100);
+  document.getElementById('s-hpbar').style.width = pct + '%';
+  const statusEl = document.getElementById('s-status');
+  let badges = '';
+  if (D.poisoned) badges += '<span class="badge poison">毒</span>';
+  if (D.cursed) badges += '<span class="badge curse">咒</span>';
+  if (D.blessing > 0) badges += `<span class="badge bless">祝${D.blessing}</span>`;
+  statusEl.innerHTML = badges;
+}
+
+function renderLocation() {
+  const loc = LOC[D.location];
+  if (!loc) return; renderStats(); actionsEl().innerHTML = '';
+  addLog(`\n=== ${loc.name} ===`, 'title');
+  addLog(typeof loc.desc === 'function' ? loc.desc() : loc.desc, 'narrator');
+  const acts = typeof loc.actions === 'function' ? loc.actions() : loc.actions;
+  acts.forEach(a => {
+    const btn = document.createElement('button');
+    btn.textContent = a.text;
+    if (a.cls) btn.className = a.cls;
+    btn.onclick = a.action;
+    actionsEl().appendChild(btn);
+  });
+  // Show equip actions
+  addEquipActions();
+}
+
+function addEquipActions() {
+  const el = actionsEl();
+  if (hasItem('steel_sword') && D.weapon!=='steel_sword') {
+    const b=document.createElement('button');b.textContent='⚔ 装备钢剑';b.className='primary';b.onclick=()=>{D.weapon='steel_sword';removeItem('steel_sword');addLog(`装备了钢剑！攻击力+${WEAPONS.steel_sword.atk}`,'system');renderLocation();};el.appendChild(b);
+  }
+  if (hasItem('iron_sword') && D.weapon!=='iron_sword' && D.weapon!=='steel_sword') {
+    const b=document.createElement('button');b.textContent='⚔ 装备铁剑';b.className='primary';b.onclick=()=>{D.weapon='iron_sword';removeItem('iron_sword');addLog(`装备了铁剑！攻击力+${WEAPONS.iron_sword.atk}`,'system');renderLocation();};el.appendChild(b);
+  }
+  if (hasItem('flame_sword') && D.weapon!=='flame_sword') {
+    const b=document.createElement('button');b.textContent='🔥 装备火焰剑';b.className='primary';b.onclick=()=>{D.weapon='flame_sword';removeItem('flame_sword');addLog(`装备了火焰剑！攻击力+${WEAPONS.flame_sword.atk}`,'system');renderLocation();};el.appendChild(b);
+  }
+  if (hasItem('dragon_killer') && D.weapon!=='dragon_killer') {
+    const b=document.createElement('button');b.textContent='🐉 装备屠龙剑';b.className='danger';b.onclick=()=>{D.weapon='dragon_killer';removeItem('dragon_killer');addLog(`装备了屠龙剑！攻击力+${WEAPONS.dragon_killer.atk}`,'system');renderLocation();};el.appendChild(b);
+  }
+  if (hasItem('platinum_armor') && D.armor!=='platinum_armor') {
+    const b=document.createElement('button');b.textContent='🛡 装备白金甲';b.className='primary';b.onclick=()=>{D.armor='platinum_armor';removeItem('platinum_armor');addLog(`装备了白金甲！防御力+${ARMORS.platinum_armor.def}`,'system');renderLocation();};el.appendChild(b);
+  }
+  if (hasItem('dragon_armor') && D.armor!=='dragon_armor') {
+    const b=document.createElement('button');b.textContent='🛡 装备龙鳞甲';b.className='primary';b.onclick=()=>{D.armor='dragon_armor';removeItem('dragon_armor');addLog(`装备了龙鳞甲！防御力+${ARMORS.dragon_armor.def}`,'system');renderLocation();};el.appendChild(b);
+  }
+  // Accessories
+  ['power_ring','guard_ring','life_ring'].forEach(id => {
+    if (hasItem(id) && D.accessory !== id) {
+      const a = ACCESSORIES[id];
+      const b = document.createElement('button'); b.textContent = `💍 戴${a.name}`; b.className = 'purple';
+      b.onclick = () => {
+        if (D.accessory) addItem(D.accessory);
+        D.accessory = id; removeItem(id);
+        addLog(`佩戴了${a.name}！`,'system'); renderLocation();
+      };
+      el.appendChild(b);
+    }
+  });
+}
+
+function renderCombat() {
+  if (!D.combat) return; renderStats(); actionsEl().innerHTML = '';
+  const e = D.combat; const pct = Math.max(0,(e.hp/e.maxHp)*100);
+  const hpColor = pct>50?'#2ecc71':pct>25?'#f39c12':'#e74c3c';
+  addLog(`\n【${e.name}】HP:${e.hp}/${e.maxHp}`, 'combat');
+  const bar = document.createElement('div'); bar.className='enemy-hp';
+  bar.innerHTML=`<span class="hp-label">${e.name}</span> <span class="hp-bar-bg"><span class="hp-bar-fill" style="width:${pct}%;background:${hpColor}"></span></span>`;
+  storyEl().appendChild(bar);
+  const acts = [
+    { text:'⚔ 攻击', action:()=>combatAction('attack'), cls:'danger' },
+    { text:'🛡 防御', action:()=>combatAction('defend') },
+  ];
+  if (hasItem('herb')) acts.push({ text:`🌿 药草(${itemCount('herb')})`, action:()=>combatAction('item_herb'), cls:'heal' });
+  if (hasItem('super_herb')) acts.push({ text:`🌿 上等(${itemCount('super_herb')})`, action:()=>combatAction('item_super_herb'), cls:'heal' });
+  if (hasItem('antidote')) acts.push({ text:`💊 解毒(${itemCount('antidote')})`, action:()=>combatAction('item_antidote') });
+  if (hasItem('holy_water')) acts.push({ text:`💧 圣水(${itemCount('holy_water')})`, action:()=>combatAction('item_holy_water'), cls:'purple' });
+  if (hasItem('bomb')) acts.push({ text:`💥 爆裂(${itemCount('bomb')})`, action:()=>combatAction('item_bomb'), cls:'gold' });
+  if (hasItem('prayer_candle')) acts.push({ text:`🕯 蜡烛(${itemCount('prayer_candle')})`, action:()=>combatAction('item_prayer_candle') });
+  acts.push({ text:'🏃 逃跑', action:()=>combatAction('flee') });
+  acts.forEach(a => {
+    const btn = document.createElement('button');
+    btn.textContent = a.text; if (a.cls) btn.className = a.cls;
+    btn.onclick = a.action; actionsEl().appendChild(btn);
+  });
+  storyEl().scrollTop = storyEl().scrollHeight;
+}
+
+// ==================== KONAMI CODE ====================
+const KONAMI_SEQ = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+let keyBuf = [];
+document.addEventListener('keydown', function(e) {
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  keyBuf.push(k);
+  if (keyBuf.length > 10) keyBuf.shift();
+  if (keyBuf.length === 10 && keyBuf.every((v,i) => v === KONAMI_SEQ[i])) {
+    keyBuf = [];
+    showCheatPanel();
+  }
+});
+
+function showCheatPanel() {
+  const ov = document.createElement('div'); ov.className = 'cheat-overlay';
+  ov.innerHTML = `<div class="cheat-panel">
+    <h2>⚙ DEBUG 面板</h2>
+    <div class="cheat-grid">
+      <label><span>等级</span><input id="c-level" type="number" value="${D.level}" min="1"></label>
+      <label><span>HP</span><input id="c-hp" type="number" value="${D.hp}" min="1"></label>
+      <label><span>最大HP</span><input id="c-maxhp" type="number" value="${D.maxHp}" min="1"></label>
+      <label><span>基础攻击</span><input id="c-baseAtk" type="number" value="${D.baseAtk}" min="0"></label>
+      <label><span>基础防御</span><input id="c-baseDef" type="number" value="${D.baseDef}" min="0"></label>
+      <label><span>金币</span><input id="c-gold" type="number" value="${D.gold}" min="0"></label>
+    </div>
+    <div class="cheat-btns">
+      <button id="c-apply" class="cheat-btn primary">应用</button>
+      <button id="c-cancel" class="cheat-btn cancel">关闭</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  document.getElementById('c-apply').onclick = () => {
+    D.level = Math.max(1, +document.getElementById('c-level').value || 1);
+    D.hp = Math.max(1, +document.getElementById('c-hp').value || 1);
+    D.maxHp = Math.max(1, +document.getElementById('c-maxhp').value || 1);
+    D.baseAtk = Math.max(0, +document.getElementById('c-baseAtk').value || 0);
+    D.baseDef = Math.max(0, +document.getElementById('c-baseDef').value || 0);
+    D.gold = Math.max(0, +document.getElementById('c-gold').value || 0);
+    D.hp = Math.min(D.hp, getMaxHp());
+    ov.remove();
+    renderStats();
+    if (D.state === 'combat') renderCombat(); else renderLocation();
+    addLog('⚙ DEBUG 参数已修改', 'system');
+  };
+  document.getElementById('c-cancel').onclick = () => ov.remove();
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+}
+
+// ==================== INIT ====================
+if (loadGame()) {
+  addLog('📂 读取存档...', 'info');
+}
+renderLocation();
+</script>
+</body>
+</html>
