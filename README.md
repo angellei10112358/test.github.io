@@ -29,3 +29,11 @@ Konami Code ↑↑↓↓←→←→BA opens a debug panel.
 
 ## Save
 Auto-save at Inn (localStorage).
+
+## Disclaimer
+
+This game is a fan-made text adventure inspired by the Dragon Quest series. It is not affiliated with, endorsed by, or sponsored by Square Enix Holdings Co., Ltd. or any of its subsidiaries. All original Dragon Quest trademarks, characters, and settings are the property of their respective owners.
+
+This project is created for educational and entertainment purposes only. No copyright infringement is intended. The author claims no ownership over any referenced intellectual property.
+
+If you have any concerns regarding the content, please contact the repository owner directly.
