@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>勇者斗恶龙 - 文字冒险</title>
+<title>烬锋 - 文字冒险</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#1a1a2e;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:'Georgia','Noto Serif SC','SimSun',serif;padding:20px}
@@ -84,7 +84,7 @@ body{padding:6px}
 </head>
 <body>
 <div id="game">
-<div id="header"><h1><span>⚔</span> 勇者斗恶龙 <span>🐉</span></h1><div class="sub">─ DRAGON QUEST · 文字冒险 ─</div></div>
+<div id="header"><h1><span>⚔</span> 烬锋 <span>🐉</span></h1><div class="sub">─ EMBERFEL · 文字冒险 ─</div></div>
 <div id="stats">
 <div class="stat"><span class="label">Lv.</span><span class="value" id="s-level">1</span></div>
 <div class="stat"><span class="label">HP</span><span class="value" id="s-hp">30</span><span class="label">/</span><span class="value" id="s-maxhp">30</span>
@@ -101,20 +101,19 @@ body{padding:6px}
 <div id="actions"></div>
 </div>
 <script>
-// ==================== DATA ====================
 const WEAPONS = {
   wooden_sword: { name: '木剑', atk: 0 },
   copper_sword: { name: '铜剑', atk: 3, price: 50 },
   steel_sword: { name: '钢剑', atk: 6 },
   iron_sword: { name: '铁剑', atk: 5 },
-  flame_sword: { name: '火焰剑', atk: 8 },
-  dragon_killer: { name: '屠龙剑', atk: 10 },
+  cinderbrand: { name: '烬炎剑', atk: 8 },
+  wyrmbane: { name: '斩龙刃', atk: 10 },
 };
 const ARMORS = {
   cloth: { name: '布衣', def: 0 },
   iron_armor: { name: '铁甲', def: 4, price: 100 },
   platinum_armor: { name: '白金甲', def: 6 },
-  dragon_armor: { name: '龙鳞甲', def: 8 },
+  scaleplate: { name: '鳞铠', def: 8 },
 };
 const ACCESSORIES = {
   power_ring: { name: '力量戒指', atk: 2, def: 0, hp: 0 },
@@ -131,27 +130,26 @@ const SHOP_ITEMS = {
   prayer_candle: { name: '祈祷蜡烛', desc: '必定逃脱', price: 50 },
 };
 const ENEMIES = {
-  slime: { name: '史莱姆', hp: 8, atk: 3, def: 1, exp: 3, gold: 3, desc: '一坨蓝色的果冻状生物，一跳一跳地靠近。' },
+  slime: { name: '粘粘怪', hp: 8, atk: 3, def: 1, exp: 3, gold: 3, desc: '一坨粘稠的胶状物向你蠕动而来。' },
   mushroom: { name: '蘑菇怪', hp: 12, atk: 4, def: 2, exp: 5, gold: 5, desc: '一只有着诡异笑脸的巨大蘑菇。' },
-  goblin: { name: '哥布林', hp: 18, atk: 7, def: 3, exp: 8, gold: 12, desc: '手持短刀的绿色小恶魔，眼神凶恶。' },
-  bat: { name: '大蝙蝠', hp: 10, atk: 8, def: 2, exp: 7, gold: 8, desc: '脸盆大小的蝙蝠，发出刺耳叫声。' },
+  goblin: { name: '绿皮怪', hp: 18, atk: 7, def: 3, exp: 8, gold: 12, desc: '手持短刀的绿色野兽，眼神凶恶。' },
+  bat: { name: '巨蝙蝠', hp: 10, atk: 8, def: 2, exp: 7, gold: 8, desc: '脸盆大小的蝙蝠，发出刺耳叫声。' },
   forest_wolf: { name: '森林狼', hp: 22, atk: 10, def: 3, exp: 11, gold: 12, desc: '灰毛的森林狼，绿眼中闪着凶光。' },
   giant_bear: { name: '巨熊', hp: 32, atk: 12, def: 5, exp: 16, gold: 20, desc: '庞大的棕熊直立而起，发出震耳欲聋的咆哮。' },
   skeleton: { name: '骷髅兵', hp: 22, atk: 9, def: 4, exp: 12, gold: 18, desc: '从地面爬出的亡灵战士，空洞的眼眶中闪着红光。' },
   water_snake: { name: '水蛇', hp: 16, atk: 11, def: 3, exp: 11, gold: 12, desc: '从水中窜出的巨蛇，毒牙闪着寒光。', poisonChance: 0.3 },
   ghost: { name: '幽灵', hp: 16, atk: 10, def: 3, exp: 14, gold: 15, desc: '半透明的灵体，散发出刺骨的寒气。' },
-  wraith: { name: '怨灵', hp: 22, atk: 13, def: 4, exp: 18, gold: 22, desc: '被怨恨束缚的亡灵，发出低沉的哀嚎。', curseChance: 0.25 },
-  dark_knight: { name: '黑暗骑士', hp: 30, atk: 14, def: 6, exp: 22, gold: 28, desc: '身穿黑色铠甲的亡灵骑士，沉默地举起长剑。' },
+  wraith: { name: '哀嚎女妖', hp: 22, atk: 13, def: 4, exp: 18, gold: 22, desc: '被怨恨束缚的女妖，发出低沉的哀嚎。', curseChance: 0.25 },
+  dark_knight: { name: '暮骑士', hp: 30, atk: 14, def: 6, exp: 22, gold: 28, desc: '身穿暗色铠甲的骑士，沉默地举起长剑。' },
   rock_golem: { name: '石巨人', hp: 38, atk: 11, def: 9, exp: 20, gold: 30, desc: '由山岩构成的巨人，动作缓慢但防御极高。' },
-  wyvern: { name: '双足飞龙', hp: 32, atk: 15, def: 5, exp: 26, gold: 36, desc: '长有双翼的龙兽，发出尖锐的嘶鸣。' },
+  wyvern: { name: '飞龙兽', hp: 32, atk: 15, def: 5, exp: 26, gold: 36, desc: '长有双翼的龙兽，发出尖锐的嘶鸣。' },
   bandit_chief: { name: '山贼头目', hp: 35, atk: 12, def: 5, exp: 30, gold: 60, desc: '山贼的头领，手持大刀，满脸横肉。', boss: true },
-  death_knight: { name: '亡灵骑士', hp: 45, atk: 16, def: 7, exp: 45, gold: 100, desc: '古代骑士的亡灵，手持巨剑，周身缠绕着黑气。', boss: true },
-  wyvern_king: { name: '飞龙王', hp: 40, atk: 18, def: 5, exp: 55, gold: 120, desc: '飞龙的首领，体型远超同类，双翼展开遮天蔽日。', boss: true, wingGust: true },
-  ancient_dragon: { name: '远古恶龙', hp: 75, atk: 24, def: 8, exp: 500, gold: 500, desc: '沉睡千年的远古恶龙，鳞片如铸铁，双目如熔岩。它缓缓站起身，整个巢穴都在震颤。', boss: true, fireBreath: true, curseChance: 0.3 },
+  death_knight: { name: '亡骸骑士', hp: 45, atk: 16, def: 7, exp: 45, gold: 100, desc: '古代骑士的亡灵，手持巨剑，周身缠绕着黑气。', boss: true },
+  storm_drake: { name: '风暴龙', hp: 40, atk: 18, def: 5, exp: 55, gold: 120, desc: '风暴龙从云端俯冲而下，双角间雷光闪烁。咆哮震山。', boss: true, wingGust: true },
+  elder_wyrm: { name: '古龙', hp: 75, atk: 24, def: 8, exp: 500, gold: 500, desc: '沉睡了千年的古龙缓缓苏醒——鳞如铸铁，目如熔岩。整座山都在它的起身中震颤。', boss: true, fireBreath: true, curseChance: 0.3 },
 };
 
-// ==================== STATE ====================
-let D = { // game data
+let D = {
   hp: 30, maxHp: 30, baseAtk: 5, baseDef: 2,
   level: 1, exp: 0, gold: 0,
   weapon: 'wooden_sword', armor: 'cloth', accessory: null,
@@ -162,7 +160,6 @@ let D = { // game data
   poisoned: false, cursed: false, blessing: 0,
 };
 
-// ==================== HELPERS ====================
 function getBaseAtk() {
   let a = D.baseAtk + WEAPONS[D.weapon].atk;
   if (D.accessory) a += ACCESSORIES[D.accessory].atk;
@@ -200,7 +197,6 @@ function addExp(amt) {
   }
 }
 
-// ==================== COMBAT ====================
 let combatId = 0;
 
 function startCombat(enemyId) {
@@ -241,10 +237,10 @@ function enemyTurn() {
   const e = D.combat; const def = getDef();
   if (e.fireBreath && e.turn > 1 && e.turn % 3 === 0) {
     const dmg = Math.floor(e.atk * 1.5 - Math.floor(def / 2));
-    addLog('→ 🔥 远古恶龙喷出烈焰！', 'dragon');
+    addLog('→ 🔥 古龙喷出烈焰！', 'dragon');
     damagePlayer(Math.max(1, dmg));
     if (!D.cursed && Math.random() < e.curseChance) {
-      D.cursed = true; addLog('→ 被龙之诅咒缠身！攻防下降！', 'combat');
+      D.cursed = true; addLog('→ 被诅咒了！攻防下降！', 'combat');
     }
     return;
   }
@@ -329,45 +325,44 @@ function endCombatCleanup() {
 }
 
 function victoryCombat() {
-  const e = D.combat; const isFinal = e.key === 'ancient_dragon';
+  const e = D.combat; const isFinal = e.key === 'elder_wyrm';
   D.gold += e.gold; addLog(`\n✨ 击败了${e.name}！`, 'combat-heal');
   addLog(`获得 ${e.exp} 经验 ${e.gold} 金币`, 'gold');
   addExp(e.exp);
-  // Post-battle events
-    if (e.key === 'bandit_chief' && !D.flags.killed_bandit_chief) {
-      D.flags.killed_bandit_chief = true;
-      if (!hasItem('iron_sword') && D.weapon !== 'iron_sword') {
-        addItem('iron_sword'); addLog('💡 缴获了山贼头目的【铁剑】！攻击力+5', 'system');
-      }
+  if (e.key === 'bandit_chief' && !D.flags.killed_bandit_chief) {
+    D.flags.killed_bandit_chief = true;
+    if (!hasItem('iron_sword') && D.weapon !== 'iron_sword') {
+      addItem('iron_sword'); addLog('💡 缴获了山贼头目的【铁剑】！攻击力+5', 'system');
     }
-    if (e.key === 'death_knight' && !D.flags.killed_death_knight) {
-      D.flags.killed_death_knight = true;
-      if (!hasItem('platinum_armor')) {
-        addItem('platinum_armor'); addLog('💡 亡灵骑士消散后留下了【白金甲】！防御力+6', 'system');
-      }
+  }
+  if (e.key === 'death_knight' && !D.flags.killed_death_knight) {
+    D.flags.killed_death_knight = true;
+    if (!hasItem('platinum_armor')) {
+      addItem('platinum_armor'); addLog('💡 亡骸骑士消散后留下了【白金甲】！防御力+6', 'system');
     }
-    if (e.key === 'wyvern_king' && !D.flags.killed_wyvern_king) {
-      D.flags.killed_wyvern_king = true;
-      if (!hasItem('dragon_killer')) {
-        addItem('dragon_killer'); addLog('💡 飞龙王掉落了传说中的【屠龙剑】！攻击力+10', 'system');
-      }
+  }
+  if (e.key === 'storm_drake' && !D.flags.killed_storm_drake) {
+    D.flags.killed_storm_drake = true;
+    if (!hasItem('wyrmbane')) {
+      addItem('wyrmbane'); addLog('💡 风暴龙掉落了传说中的【斩龙刃】！攻击力+10', 'system');
     }
-    if (e.key === 'skeleton' && !D.flags.found_steel_sword && D.weapon !== 'steel_sword' && !hasItem('steel_sword')) {
-      D.flags.found_steel_sword = true;
-      addItem('steel_sword'); addLog('💡 骷髅兵身后插着一把【钢剑】！攻击力+6', 'system');
-    }
-    if (e.key === 'ghost' && !D.flags.found_dragon_armor && D.armor !== 'dragon_armor' && !hasItem('dragon_armor')) {
-      D.flags.found_dragon_armor = true;
-      addItem('dragon_armor'); addLog('💡 幽灵消失后留下了【龙鳞甲】！防御力+8', 'system');
-    }
+  }
+  if (e.key === 'skeleton' && !D.flags.found_steel_sword && D.weapon !== 'steel_sword' && !hasItem('steel_sword')) {
+    D.flags.found_steel_sword = true;
+    addItem('steel_sword'); addLog('💡 骷髅兵身后插着一把【钢剑】！攻击力+6', 'system');
+  }
+  if (e.key === 'ghost' && !D.flags.found_scaleplate && D.armor !== 'scaleplate' && !hasItem('scaleplate')) {
+    D.flags.found_scaleplate = true;
+    addItem('scaleplate'); addLog('💡 幽灵消失后留下了【鳞铠】！防御力+8', 'system');
+  }
   if (isFinal) {
-    D.flags.defeated_dragon = true;
+    D.flags.defeated_elder_wyrm = true;
     D.state = 'explore'; D.combat = null; D.atkBoost = false;
     if (D.blessing > 0) D.blessing--;
     addLog('\n══════════════════════', 'dragon');
-    addLog('🏆 恭喜！你击败了远古恶龙！', 'dragon');
+    addLog('🏆 恭喜！你击败了古龙！', 'dragon');
     addLog('══════════════════════', 'dragon');
-    addLog('\n你带着龙牙回到ラダトーム，国王亲自为你加冕。', 'narrator');
+    addLog('\n你带着龙牙回到石风镇，国王亲自为你加冕。', 'narrator');
     addLog('王国恢复了和平，你的名字被永远传颂——', 'narrator');
     addLog('🌟 传说中的勇者 🌟', 'title');
     document.getElementById('actions').innerHTML = `<button onclick="resetGame()" class="primary">重新开始</button>`;
@@ -394,20 +389,19 @@ function resetGame() {
   renderLocation();
 }
 
-// ==================== LOCATIONS ====================
 const LOC = {};
 
 LOC.town_square = {
-  name: 'ラダトーム 城镇广场',
+  name: '石风镇 城镇广场',
   desc: () => {
     let s = '阳光洒在古老的石板路上，钟楼发出悠扬的报时声。';
-    if (D.flags.defeated_dragon) s += '\n\n和平的城镇，人们脸上洋溢着笑容。';
-    else if (!D.flags.talked_king) s += '\n\n远处城堡的旗帜在风中飘扬——国王正在招募讨伐恶龙的勇者。';
-    else s += '\n\n城堡的旗帜仍在飘扬——恶龙的威胁尚未解除。';
+    if (D.flags.defeated_elder_wyrm) s += '\n\n和平的城镇，人们脸上洋溢着笑容。';
+    else if (!D.flags.talked_king) s += '\n\n远处城堡的旗帜在风中飘扬——国王正在招募讨伐古龙的勇者。';
+    else s += '\n\n城堡的旗帜仍在飘扬——古龙的威胁尚未解除。';
     return s;
   },
   actions: () => {
-    if (D.flags.defeated_dragon) return [{ text: '🏰 王城', action: ()=>go('castle'), cls:'primary' }];
+    if (D.flags.defeated_elder_wyrm) return [{ text: '🏰 王城', action: ()=>go('castle'), cls:'primary' }];
     return [
       { text: '🏰 王城', action: ()=>go('castle'), cls:'primary' },
       { text: '🏪 道具店', action: ()=>go('shop') },
@@ -422,16 +416,16 @@ LOC.town_square = {
 LOC.castle = {
   name: '王城',
   desc: () => {
-    if (D.flags.defeated_dragon) return '国王看到你后喜极而泣：「勇者啊！你拯救了我们的王国！从今往后你就是ラダトーム的守护者！」';
-    if (!D.flags.talked_king) return '庄严肃穆的大殿中，老国王眉头紧锁。他看到你后站起身：\n\n「年轻的勇者，你终于来了。恶龙盘踞在北方的洞穴中。我赐你50金币作为盘缠，请务必消灭恶龙！」';
-    return '国王关切地问：「勇者啊，准备好挑战恶龙了吗？先去武器店和道具店做好准备，恶龙非常强大。」';
+    if (D.flags.defeated_elder_wyrm) return '国王看到你后喜极而泣：「勇者啊！你拯救了我们的王国！从今往后你就是石风镇的守护者！」';
+    if (!D.flags.talked_king) return '庄严肃穆的大殿中，老国王眉头紧锁。他看到你后站起身：\n\n「年轻的勇者，你终于来了。古龙盘踞在山巅的巢穴中。我赐你60金币作为盘缠，请务必消灭古龙！」';
+    return '国王关切地问：「勇者啊，准备好挑战古龙了吗？先去武器店和道具店做好准备，古龙非常强大。」';
   },
   actions: () => {
-    if (D.flags.defeated_dragon) return [{ text: '返回广场', action: ()=>go('town_square') }];
+    if (D.flags.defeated_elder_wyrm) return [{ text: '返回广场', action: ()=>go('town_square') }];
     if (!D.flags.talked_king) return [
       { text: '接受委托', action: ()=>{
-        D.flags.talked_king=true; D.gold+=50;
-        addLog('获得50金币', 'gold');
+        D.flags.talked_king=true; D.gold+=60;
+        addLog('获得60金币', 'gold');
         if (!hasItem('herb')){addItem('herb');addLog('还得到一颗药草','info');}
         renderLocation();
       }, cls:'primary' },
@@ -493,7 +487,7 @@ LOC.inn = {
     { text: '和老板娘闲聊', action: ()=>{
       const msgs = [
         '"听说北之森林里有强盗出没，小心些。"',
-        '"洞穴里的恶龙已经盘踞多年了，之前的勇者都没能回来..."',
+        '"山洞里的古龙已经盘踞多年了，之前的勇者都没能回来..."',
         '"教堂的神父是个好人，他会给你祝福的。"',
         '"武器店的铁匠年轻时也是个冒险者呢。"',
         '"如果你找到力量种子，记得自己吃掉——那东西可遇不可求。"',
@@ -578,7 +572,7 @@ LOC.forest_deep = {
     const acts = []; D.flags.deep_forest_visited=true;
     acts.push({ text: '探索四周', action: ()=>{
       if (Math.random()<0.5) startCombat(Math.random()<0.5?'goblin':'bat');
-      else {if(!D.flags.found_str_seed && Math.random()<0.3){D.flags.found_str_seed=true;D.baseAtk+=2;addLog('💪 发现力量种子！攻击力永久+2！','system');}else addLog('什么也没发现。','info');renderLocation();}
+      else {if(!D.flags.found_vigor_seed && Math.random()<0.3){D.flags.found_vigor_seed=true;D.baseAtk+=2;addLog('💪 发现力量种子！攻击力永久+2！','system');}else addLog('什么也没发现。','info');renderLocation();}
     }});
     acts.push({ text: '山贼营地', action: ()=>go('bandit_camp') });
     acts.push({ text: '返回森林入口', action: ()=>go('forest') });
@@ -628,13 +622,13 @@ LOC.north_forest = {
 LOC.ruined_ruins = {
   name: '🏚 废弃遗迹',
   desc: () => {
-    if (D.flags.killed_death_knight) return '古老的遗迹中一片寂静，只有风穿过残垣断壁的呜咽。亡灵骑士已经被击败了。';
-    return '古老的石头遗迹半掩在藤蔓中。广场中央的祭坛上缠绕着黑气，一具身穿黑色铠甲的亡灵骑士站在祭坛前，仿佛在守护着什么。';
+    if (D.flags.killed_death_knight) return '古老的遗迹中一片寂静，只有风穿过残垣断壁的呜咽。亡骸骑士已经被击败了。';
+    return '古老的石头遗迹半掩在藤蔓中。广场中央的祭坛上缠绕着黑气，一具身穿暗色铠甲的亡骸骑士站在祭坛前，仿佛在守护着什么。';
   },
   actions: () => {
     if (D.flags.killed_death_knight) return [{ text: '返回北之森林', action: ()=>go('north_forest') }];
     return [
-      { text: '⚔ 挑战亡灵骑士！', action: ()=>startCombat('death_knight'), cls:'danger' },
+      { text: '⚔ 挑战亡骸骑士！', action: ()=>startCombat('death_knight'), cls:'danger' },
       { text: '返回北之森林', action: ()=>go('north_forest') },
     ];
   },
@@ -700,10 +694,10 @@ LOC.cave_b2 = {
 };
 
 LOC.cave_b3 = {
-  name: '🕳 黑暗回廊 B3',
+  name: '🕳 熔火回廊 B3',
   desc: () => {
     if (!D.flags.cave_b3_visited) return '穿过一道狭窄的石缝，你来到一个巨大的地下回廊。这里的空气灼热而干燥，墙壁上镶嵌着发出暗红色光芒的矿石。远处的黑暗中传来沉重的脚步声。';
-    return '黑暗回廊中，红矿石的光芒忽明忽暗。不知名的生物在暗处移动。';
+    return '熔火回廊中，红矿石的光芒忽明忽暗。不知名的生物在暗处移动。';
   },
   actions: () => {
     const acts = []; D.flags.cave_b3_visited=true;
@@ -711,9 +705,9 @@ LOC.cave_b3 = {
       if (Math.random()<0.5) startCombat(Math.random()<0.5?'dark_knight':'rock_golem');
       else {
         let found=false;
-        if (!D.flags.found_flame_sword && Math.random()<0.25) {
-          D.flags.found_flame_sword=true; addItem('flame_sword');
-          addLog('🔥 在石台上发现【火焰剑】！攻击力+8','system'); found=true;
+        if (!D.flags.found_cinderbrand && Math.random()<0.25) {
+          D.flags.found_cinderbrand=true; addItem('cinderbrand');
+          addLog('🔥 在石台上发现【烬炎剑】！攻击力+8','system'); found=true;
         }
         if (!found && !D.flags.found_life_ring && Math.random()<0.25) {
           D.flags.found_life_ring=true; addItem('life_ring');
@@ -724,82 +718,80 @@ LOC.cave_b3 = {
       }
     }});
     if (D.flags.cave_b3_visited) {
-      if (D.flags.killed_wyvern_king || D.level >= 4 || hasItem('dragon_killer'))
-        acts.push({ text: '🐉 前往龙之巅', action: ()=>go('dragon_peak'), cls:'danger' });
+      if (D.flags.killed_storm_drake || D.level >= 4 || hasItem('wyrmbane'))
+        acts.push({ text: '🐉 前往龙脊峰', action: ()=>go('dragon_peak'), cls:'danger' });
       else
-        acts.push({ text: '尝试前往龙之巅', action: ()=>{addLog('前方的通道被巨大的石门挡住，需要更强的力量才能推开。（建议Lv.4+并持有屠龙剑）','info');renderLocation();} });
+        acts.push({ text: '尝试前往龙脊峰', action: ()=>{addLog('前方的通道被巨大的石门挡住，需要更强的力量才能推开。（建议Lv.4+并持有斩龙刃）','info');renderLocation();} });
     }
     acts.push({ text: '返回 B2', action: ()=>go('cave_b2') });
     return acts;
   },
 };
 
-// ---- Dragon area ----
+// ---- Mountain area ----
 LOC.dragon_peak = {
-  name: '⛰ 龙之巅',
+  name: '⛰ 龙脊峰',
   desc: () => {
-    if (!D.flags.dragon_peak_visited) return '从洞穴中走出，你发现自己已经到了山巅。凛冽的山风扑面而来，云海在脚下翻涌。远处的山峰上有一个巨大的黑影——那是恶龙的巢穴。\n\n山巅平台上栖息着几只双足飞龙。';
-    return '龙之巅，云海翻涌。恶龙的巢穴就在前方。';
+    if (!D.flags.dragon_peak_visited) return '从洞穴中走出，你发现自己已经到了山巅。凛冽的山风扑面而来，云海在脚下翻涌。远处的山峰上有一个巨大的黑影——那是古龙的巢穴。\n\n山巅平台上栖息着几只飞龙兽。';
+    return '龙脊峰，云海翻涌。古龙的巢穴就在前方。';
   },
   actions: () => {
     const acts = []; D.flags.dragon_peak_visited=true;
-    acts.push({ text: '挑战飞龙', action: ()=>{
+    acts.push({ text: '挑战飞龙兽', action: ()=>{
       if (Math.random()<0.6) startCombat('wyvern');
-      else {addLog('飞龙们在空中盘旋，没有注意到你。','info');renderLocation();}
+      else {addLog('飞龙兽们在空中盘旋，没有注意到你。','info');renderLocation();}
     }});
-    if (D.flags.dragon_peak_visited) acts.push({ text: '飞龙王之巅', action: ()=>go('wyvern_peak') });
+    if (D.flags.dragon_peak_visited) acts.push({ text: '风暴之巅', action: ()=>go('storm_peak') });
     acts.push({ text: '返回 B3', action: ()=>go('cave_b3') });
     return acts;
   },
 };
 
-LOC.wyvern_peak = {
-  name: '⛰ 飞龙王之巅',
+LOC.storm_peak = {
+  name: '⛰ 风暴之巅',
   desc: () => {
-    if (D.flags.killed_wyvern_king) return '山巅之上，飞龙王的巨大尸体静静躺在岩石间。通往恶龙巢穴的道路已经打开。';
-    return '山巅的最高处，一只体型是同类三倍的巨型飞龙正站在悬崖边俯瞰云海。它察觉到你的到来，缓缓转过头来。';
+    if (D.flags.killed_storm_drake) return '山巅之上，风暴龙的巨大尸体静静躺在岩石间。通往古龙巢穴的道路已经打开。';
+    return '山巅的最高处，一只双角间雷光闪烁的巨型龙兽站在悬崖边俯瞰云海。它察觉到你的到来，缓缓转过头来。';
   },
   actions: () => {
-    if (D.flags.killed_wyvern_king) return [{ text: '🐉 前往恶龙巢穴！', action: ()=>go('dragon_lair'), cls:'danger' }];
+    if (D.flags.killed_storm_drake) return [{ text: '🐉 前往古龙巢穴！', action: ()=>go('dragon_lair'), cls:'danger' }];
     return [
-      { text: '⚔ 挑战飞龙王！', action: ()=>startCombat('wyvern_king'), cls:'danger' },
-      { text: '返回龙之巅', action: ()=>go('dragon_peak') },
+      { text: '⚔ 挑战风暴龙！', action: ()=>startCombat('storm_drake'), cls:'danger' },
+      { text: '返回龙脊峰', action: ()=>go('dragon_peak') },
     ];
   },
 };
 
 LOC.dragon_lair = {
-  name: '🐉 龙之巢穴',
+  name: '🐉 古龙巢穴',
   desc: () => {
-    if (D.flags.defeated_dragon) return '巢穴中只剩下熄灭的灰烬和破碎的龙鳞。恶龙已被讨伐。';
-    return '🔥 巨大的洞穴中堆满金币和骸骨。洞穴深处，远古恶龙睁开了熔岩般的双目。它缓缓站起身，整个地面都在震颤。\n\n「吼────────！！！！」\n\n最终决战！';
+    if (D.flags.defeated_elder_wyrm) return '巢穴中只剩下熄灭的灰烬和破碎的龙鳞。古龙已被讨伐。';
+    return '🔥 巨大的洞穴中堆满金币和骸骨。洞穴深处，古龙睁开了熔岩般的双目。它缓缓站起身，整个地面都在震颤。\n\n「吼────────！！！！」\n\n最终决战！';
   },
   actions: () => {
-    if (D.flags.defeated_dragon) return [{ text: '返回城镇', action: ()=>go('town_square') }];
+    if (D.flags.defeated_elder_wyrm) return [{ text: '返回城镇', action: ()=>go('town_square') }];
     return [
-      { text: '⚔ 挑战远古恶龙！', action: ()=>startCombat('ancient_dragon'), cls:'danger' },
-      { text: '返回龙之巅', action: ()=>go('dragon_peak') },
+      { text: '⚔ 挑战古龙！', action: ()=>startCombat('elder_wyrm'), cls:'danger' },
+      { text: '返回龙脊峰', action: ()=>go('dragon_peak') },
     ];
   },
 };
 
-// ==================== NAVIGATION ====================
 function go(id) {
   D.location = id; renderLocation();
 }
 
-// ==================== SAVE/LOAD ====================
 function saveGame() {
   try {
     const data = {};
     ['hp','maxHp','baseAtk','baseDef','level','exp','gold','weapon','armor','accessory','inventory','flags','poisoned','cursed','blessing'].forEach(k => data[k] = JSON.parse(JSON.stringify(D[k])));
-    localStorage.setItem('dq_save', JSON.stringify(data));
+    localStorage.setItem('emberfel_save', JSON.stringify(data));
   } catch(e) {}
 }
 
 function loadGame() {
   try {
-    const raw = localStorage.getItem('dq_save');
+    const raw = localStorage.getItem('emberfel_save');
     if (!raw) return false;
     const data = JSON.parse(raw);
     Object.assign(D, data);
@@ -807,7 +799,6 @@ function loadGame() {
   } catch(e) { return false; }
 }
 
-// ==================== RENDER ====================
 const storyEl = () => document.getElementById('story');
 const actionsEl = () => document.getElementById('actions');
 
@@ -855,7 +846,6 @@ function renderLocation() {
     btn.onclick = a.action;
     actionsEl().appendChild(btn);
   });
-  // Show equip actions
   addEquipActions();
 }
 
@@ -867,19 +857,18 @@ function addEquipActions() {
   if (hasItem('iron_sword') && D.weapon!=='iron_sword' && D.weapon!=='steel_sword') {
     const b=document.createElement('button');b.textContent='⚔ 装备铁剑';b.className='primary';b.onclick=()=>{D.weapon='iron_sword';removeItem('iron_sword');addLog(`装备了铁剑！攻击力+${WEAPONS.iron_sword.atk}`,'system');renderLocation();};el.appendChild(b);
   }
-  if (hasItem('flame_sword') && D.weapon!=='flame_sword') {
-    const b=document.createElement('button');b.textContent='🔥 装备火焰剑';b.className='primary';b.onclick=()=>{D.weapon='flame_sword';removeItem('flame_sword');addLog(`装备了火焰剑！攻击力+${WEAPONS.flame_sword.atk}`,'system');renderLocation();};el.appendChild(b);
+  if (hasItem('cinderbrand') && D.weapon!=='cinderbrand') {
+    const b=document.createElement('button');b.textContent='🔥 装备烬炎剑';b.className='primary';b.onclick=()=>{D.weapon='cinderbrand';removeItem('cinderbrand');addLog(`装备了烬炎剑！攻击力+${WEAPONS.cinderbrand.atk}`,'system');renderLocation();};el.appendChild(b);
   }
-  if (hasItem('dragon_killer') && D.weapon!=='dragon_killer') {
-    const b=document.createElement('button');b.textContent='🐉 装备屠龙剑';b.className='danger';b.onclick=()=>{D.weapon='dragon_killer';removeItem('dragon_killer');addLog(`装备了屠龙剑！攻击力+${WEAPONS.dragon_killer.atk}`,'system');renderLocation();};el.appendChild(b);
+  if (hasItem('wyrmbane') && D.weapon!=='wyrmbane') {
+    const b=document.createElement('button');b.textContent='🐉 装备斩龙刃';b.className='danger';b.onclick=()=>{D.weapon='wyrmbane';removeItem('wyrmbane');addLog(`装备了斩龙刃！攻击力+${WEAPONS.wyrmbane.atk}`,'system');renderLocation();};el.appendChild(b);
   }
   if (hasItem('platinum_armor') && D.armor!=='platinum_armor') {
     const b=document.createElement('button');b.textContent='🛡 装备白金甲';b.className='primary';b.onclick=()=>{D.armor='platinum_armor';removeItem('platinum_armor');addLog(`装备了白金甲！防御力+${ARMORS.platinum_armor.def}`,'system');renderLocation();};el.appendChild(b);
   }
-  if (hasItem('dragon_armor') && D.armor!=='dragon_armor') {
-    const b=document.createElement('button');b.textContent='🛡 装备龙鳞甲';b.className='primary';b.onclick=()=>{D.armor='dragon_armor';removeItem('dragon_armor');addLog(`装备了龙鳞甲！防御力+${ARMORS.dragon_armor.def}`,'system');renderLocation();};el.appendChild(b);
+  if (hasItem('scaleplate') && D.armor!=='scaleplate') {
+    const b=document.createElement('button');b.textContent='🛡 装备鳞铠';b.className='primary';b.onclick=()=>{D.armor='scaleplate';removeItem('scaleplate');addLog(`装备了鳞铠！防御力+${ARMORS.scaleplate.def}`,'system');renderLocation();};el.appendChild(b);
   }
-  // Accessories
   ['power_ring','guard_ring','life_ring'].forEach(id => {
     if (hasItem(id) && D.accessory !== id) {
       const a = ACCESSORIES[id];
@@ -921,7 +910,6 @@ function renderCombat() {
   storyEl().scrollTop = storyEl().scrollHeight;
 }
 
-// ==================== KONAMI CODE ====================
 const KONAMI_SEQ = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
 let keyBuf = [];
 document.addEventListener('keydown', function(e) {
@@ -969,7 +957,6 @@ function showCheatPanel() {
   ov.onclick = e => { if (e.target === ov) ov.remove(); };
 }
 
-// ==================== INIT ====================
 if (loadGame()) {
   addLog('📂 读取存档...', 'info');
 }
